@@ -91,3 +91,7 @@ ehthumbs.db
 
 # Local Hardware / Debloat Scripts
 debloat/
+
+# Archives
+*.zip
+*.tar.gz
