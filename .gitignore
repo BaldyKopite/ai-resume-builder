@@ -67,7 +67,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-next-env.d.ts
 
 # Environment Variables & Secrets
 .env
