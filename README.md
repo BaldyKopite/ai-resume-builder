@@ -1,6 +1,6 @@
 # AI Resume Builder: ATS-Tailored Resume Generator
 
-[![CI / Automated Verification](https://github.com/your-username/ai-resume-builder/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/ai-resume-builder/actions/workflows/ci.yml)
+[![CI / Automated Verification](https://github.com/BaldyKopite/ai-resume-builder/actions/workflows/ci.yml/badge.svg)](https://github.com/BaldyKopite/ai-resume-builder/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![Django 5.2](https://img.shields.io/badge/Django-5.2-092E20.svg?logo=django&logoColor=white)](https://www.djangoproject.com/)

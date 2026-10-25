@@ -175,13 +175,41 @@ def extract_text_from_docx(file_bytes: bytes) -> str:
         ) from exc
 
 
+MAX_RESUME_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB hard limit
+
+
 def extract_text_from_upload(filename: str, file_bytes: bytes) -> str:
-    """Routes file extraction based on file extension."""
+    """
+    Routes file extraction based on file extension and strictly validates
+    file size and binary magic bytes to prevent spoofed/adversarial uploads.
+    """
+    if len(file_bytes) > MAX_RESUME_FILE_SIZE_BYTES:
+        raise ResumeParseError(
+            f"The uploaded file exceeds the 5 MB limit (received {len(file_bytes) / (1024 * 1024):.1f} MB).",
+            code="FILE_TOO_LARGE",
+        )
+
     lower_name = (filename or "").lower().strip()
+
+    # Content signature validation (magic bytes)
     if lower_name.endswith(".pdf"):
+        if not file_bytes.startswith(b"%PDF"):
+            raise ResumeParseError(
+                "The file has a .pdf extension but does not match the PDF file signature (%PDF). "
+                "Please upload a genuine, uncorrupted PDF document.",
+                code="INVALID_PDF_SIGNATURE",
+            )
         return extract_text_from_pdf(file_bytes)
+
     if lower_name.endswith(".docx"):
+        if not file_bytes.startswith(b"PK\x03\x04"):
+            raise ResumeParseError(
+                "The file has a .docx extension but does not match the Microsoft Word OpenXML signature (PK zip). "
+                "Please upload a genuine Word (.docx) document.",
+                code="INVALID_DOCX_SIGNATURE",
+            )
         return extract_text_from_docx(file_bytes)
+
     if lower_name.endswith(".txt") or lower_name.endswith(".md"):
         try:
             return file_bytes.decode("utf-8", errors="replace").strip()

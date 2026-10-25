@@ -23,13 +23,44 @@ export class ApiError extends Error {
 }
 
 /**
+ * Robust fetch wrapper with timeout cancellation.
+ */
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs: number = 30000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return res;
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new ApiError(
+        "Request timed out. The server took too long to respond. Please check your network and try again.",
+        408,
+        "REQUEST_TIMEOUT"
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
  * Scrapes or parses a job posting from a URL or raw text.
  */
 export async function scrapeJobPosting(
   jobUrl?: string,
   jobText?: string
 ): Promise<JobPostingData> {
-  const res = await fetch(`${BACKEND_URL}/api/scrape-job/`, {
+  const res = await fetchWithTimeout(`${BACKEND_URL}/api/scrape-job/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ job_url: jobUrl, job_text: jobText }),
@@ -63,7 +94,7 @@ export async function parseResumeInput(
     formData.append("resume_text", pastedText);
   }
 
-  const res = await fetch(`${BACKEND_URL}/api/parse-resume/`, {
+  const res = await fetchWithTimeout(`${BACKEND_URL}/api/parse-resume/`, {
     method: "POST",
     body: formData,
   });
@@ -83,11 +114,11 @@ export async function tailorResumeContent(
   job: JobPostingData,
   resume: StructuredResume
 ): Promise<TailoringResult> {
-  const res = await fetch(`${BACKEND_URL}/api/tailor/`, {
+  const res = await fetchWithTimeout(`${BACKEND_URL}/api/tailor/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ job, resume }),
-  });
+  }, 45000); // Allow 45s for AI-assisted tailoring if enabled
 
   const data = await res.json();
   if (!res.ok) {
@@ -106,7 +137,7 @@ export async function tailorResumeContent(
  * Downloads the user-approved tailored resume as an ATS-compliant PDF.
  */
 export async function downloadPdfResume(resume: StructuredResume, candidateName: string): Promise<void> {
-  const res = await fetch(`${BACKEND_URL}/api/export/pdf/`, {
+  const res = await fetchWithTimeout(`${BACKEND_URL}/api/export/pdf/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ resume }),
@@ -126,7 +157,7 @@ export async function downloadPdfResume(resume: StructuredResume, candidateName:
  * Downloads the user-approved tailored resume as an ATS-compliant DOCX.
  */
 export async function downloadDocxResume(resume: StructuredResume, candidateName: string): Promise<void> {
-  const res = await fetch(`${BACKEND_URL}/api/export/docx/`, {
+  const res = await fetchWithTimeout(`${BACKEND_URL}/api/export/docx/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ resume }),

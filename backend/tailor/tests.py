@@ -542,3 +542,32 @@ def test_resume_parser_stitches_multiline_education():
     assert "Electronics" in edu.degree and "Communications" in edu.degree
     assert "TAFE" in edu.institution or "North Metropolitan" in edu.institution
 
+
+# ============================================================================
+# 7. SECURITY & VALIDATION TESTS
+# ============================================================================
+
+def test_resume_parser_rejects_spoofed_pdf_without_magic_bytes():
+    """Verifies that non-PDF binaries named .pdf are rejected immediately via signature check."""
+    fake_pdf_bytes = b"This is not a real PDF file despite the extension"
+    with pytest.raises(ResumeParseError) as exc_info:
+        parse_resume(resume_file_name="fake_resume.pdf", resume_file_bytes=fake_pdf_bytes)
+    assert exc_info.value.code == "INVALID_PDF_SIGNATURE"
+
+
+def test_resume_parser_rejects_spoofed_docx_without_magic_bytes():
+    """Verifies that non-DOCX binaries named .docx are rejected immediately via PK zip check."""
+    fake_docx_bytes = b"This is plain text pretending to be a word document"
+    with pytest.raises(ResumeParseError) as exc_info:
+        parse_resume(resume_file_name="fake_resume.docx", resume_file_bytes=fake_docx_bytes)
+    assert exc_info.value.code == "INVALID_DOCX_SIGNATURE"
+
+
+def test_resume_parser_rejects_oversized_file():
+    """Verifies files over 5 MB are rejected with FILE_TOO_LARGE."""
+    oversized_bytes = b"%PDF" + (b"0" * (6 * 1024 * 1024))
+    with pytest.raises(ResumeParseError) as exc_info:
+        parse_resume(resume_file_name="large.pdf", resume_file_bytes=oversized_bytes)
+    assert exc_info.value.code == "FILE_TOO_LARGE"
+
+

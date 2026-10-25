@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Resume Builder - Frontend
 
-## Getting Started
+The interactive user interface for the AI Resume Builder, built with **Next.js 16 (App Router)**, **React 19**, **TypeScript**, and **Tailwind CSS v4**.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Architecture Overview
+
+```text
+src/
+├── app/
+│   ├── layout.tsx         # Root layout with Geist font definitions & metadata
+│   ├── page.tsx           # Multi-step tailoring workflow & side-by-side review UI
+│   └── globals.css        # Tailwind v4 utility layers and styling variables
+├── services/
+│   └── api.ts             # Strongly typed API client with timeout and error mapping
+└── types/
+    └── resume.ts          # TypeScript interfaces synchronized with backend Pydantic schemas
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Key Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Multi-Step Guided Flow**:
+   * **Step 1 (Inputs & Job Link)**: Supports job URL scraping (LinkedIn, Seek, generic boards) with graceful paste fallbacks. Accepts PDF/Word resume uploads or plain text.
+   * **Step 2 (Side-by-Side Review & Edit)**: Visual diff inspection (`Enhanced Phrasing`, `Position Reordered`, `Keywords Matched`). Editable professional summary, reordered bullet points, and front-loaded ATS skills.
+   * **Step 3 (ATS Export Ready)**: Direct downloads for single-column ATS-compliant PDF and Word (.docx) files.
+2. **Honesty Guardrails & Gap Analysis**:
+   * Displays unmet job requirements in a dedicated panel so candidates can add transferrable experience or add confirmed skills rather than having AI invent claims.
+   * Domain-filtered skill pills allowing one-click skill inclusion.
+3. **Stateless Privacy by Default**:
+   * Operates purely in-memory. Zero local storage or tracking of sensitive candidate data.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Local Development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Prerequisites
+* Node.js 18+ (tested on Node.js 20/24)
+* npm or pnpm
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Setup
+```bash
+# Install dependencies
+npm install
 
-## Deploy on Vercel
+# Run development server
+npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Environment Variables
+
+Create `.env.local` if you need to point to a custom backend API URL:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+---
+
+## Build & Quality Checks
+
+```bash
+# Typecheck TypeScript
+npx tsc --noEmit
+
+# Production build
+npm run build
+
+# Start production server
+npm start
+```

@@ -9,9 +9,18 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-resume-builder-dev-key-092026")
-
 DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
+
+# In production (DEBUG=False), DJANGO_SECRET_KEY must be provided via environment variable
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "django-insecure-resume-builder-dev-key-092026"
+    else:
+        raise ValueError(
+            "CRITICAL SECURITY CONFIGURATION ERROR: DJANGO_SECRET_KEY environment variable "
+            "must be explicitly configured when DJANGO_DEBUG=False."
+        )
 
 ALLOWED_HOSTS = [
     host.strip()
@@ -71,8 +80,9 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# CORS settings for Next.js frontend
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+# CORS security settings
+# When DEBUG is active, allow all local origins only if explicitly allowed, else restrict to trusted frontend URLs
+CORS_ALLOW_ALL_ORIGINS = DEBUG and os.environ.get("CORS_ALLOW_ALL", "True").lower() in ("true", "1")
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
@@ -81,10 +91,11 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
-# File Upload limits (10 MB max for PDF/DOCX resumes)
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+# Strict payload & upload caps (5 MB maximum to prevent DoS memory pressure)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
+# DRF Throttling to prevent API abuse & automated scrapers
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
@@ -94,6 +105,12 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.MultiPartParser",
         "rest_framework.parsers.FormParser",
     ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": os.environ.get("DRF_ANON_THROTTLE_RATE", "100/minute"),
+    },
     "UNAUTHENTICATED_USER": None,
 }
 
