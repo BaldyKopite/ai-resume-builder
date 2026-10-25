@@ -1,0 +1,62 @@
+name: CI / Automated Verification
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  backend-test:
+    name: Backend Test Suite (Python 3.12 / Django)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Backend System Check
+        run: |
+          python backend/manage.py check
+
+      - name: Run Pytest Suite
+        run: |
+          cd backend
+          python -m pytest -v
+
+  frontend-check:
+    name: Frontend Build & Typecheck (Next.js 16 / TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run TypeScript Typecheck
+        run: |
+          cd frontend
+          npx tsc --noEmit
+
+      - name: Build Next.js Application
+        run: |
+          cd frontend
+          npm run build
